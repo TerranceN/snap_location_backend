@@ -110,4 +110,5 @@ def upload_file(request):
     return HttpResponse(json.dumps({'result': 'success', 'files': map(lambda x: request.FILES[x].name, request.FILES)}))
 
 def get_users(request):
-    return HttpsResponse(json.dumps({'result': 'success'}))
+    user_data = map(lambda x: {'display_name': x.unique_name_display}, User.objects.all())
+    return HttpResponse(json.dumps({'result': 'success', 'users': user_data}))
