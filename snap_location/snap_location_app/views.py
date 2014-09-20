@@ -148,12 +148,12 @@ def guess_location(request):
 
         score = float(10000)/distance if distance!=0 else 1000
 
-        d = {'result': 'success', 'score': score}
+        d = {'result': 'success', 'score': score, 'correct_lat': image_lat, 'correct_lon': image_lon, 'distance': distance}
         if len(game_rounds) > 1:
             next_round = game_rounds[1]
             image = UploadedImage.objects.get(id=next_round.image_data)
-            url = image.image_data.url
-            d['next_url'] = url
+            # url = image.image_data.url
+            # d['next_url'] = url
         return HttpResponse(json.dumps(d))
     except MultiValueDictKeyError as e:
         return HttpResponse(json.dumps({'result': 'missing arguments', 'long_error': e.message}))
@@ -178,9 +178,14 @@ def get_image(request):
         return HttpResponse(json.dumps({'result': 'unknown user', 'add_info': e.message}))
 
 def get_distance(lat1, lon1, lat2, lon2):
-    # use +/- to indicate north/south and east/west
-    # using pythagorean for now, can use great circle distance later
     r = 6371
-    dy = (lat2 - lat1) * pi / 180 * r
-    dx = (lon2 - lon1) * pi / 180 * r * cos(lat1 * pi / 180)
-    return sqrt(dx**2 + dy**2)
+    # use pythagorean method if distances are small to avoid roundoff errors
+    if abs(lat2 - lat1) < 0.1 and abs(lon2 - lon1) < 0.1:
+        dy = rad(lat2 - lat1) * r
+        dx = rad(lon2 - lon1) * r * cos(rad(lat1))
+        return sqrt(dx**2 + dy**2)
+    else:
+        return r * acos(sin(rad(lat1))*sin(rad(lat2)) + cos(rad(lat1))*cos(rad(lat2))*cos(rad(lon2-lon1)))
+
+def rad(angle):
+    return angle * pi / 180
