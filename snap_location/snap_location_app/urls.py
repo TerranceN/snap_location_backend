@@ -11,4 +11,5 @@ urlpatterns = patterns('',
     url(r'^upload_image/', views.upload_file),
     url(r'^get_users/', views.get_users),
     url(r'^guess_location/', views.guess_location),
+    url(r'^next_image/', views.get_image),
 )

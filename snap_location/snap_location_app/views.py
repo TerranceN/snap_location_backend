@@ -140,9 +140,25 @@ def guess_location(request):
         return HttpResponse(json.dumps({'result': 'success', 'score': score}))
     except MultiValueDictKeyError as e:
         return HttpResponse(json.dumps({'result': 'missing arguments', 'long_error': e.message}))
-    except (User.DoesNotExist, GameRound.DoesNotExist) as e:
+    except (User.DoesNotExist, GameRound.DoesNotExist, UploadedImage.DoesNotExist) as e:
         return HttpResponse(json.dumps({'result': 'unknown user', 'add_info': e.message}))
 
+def get_image(request):
+    try:
+        unique_name = request.GET['unique_name']
+        sender_name = request.GET['friend_name']
+
+        user = User.objects.get(unique_name=unique_name.lower())
+        sender = User.objects.get(unique_name=sender_name.lower())
+        game_round = GameRound.objects.filter(sender=sender.id, recipient=user.id).order_by('datetime')[:1].get()
+        image = UploadedImage.objects.get(id=game_round.image_data)
+        url = image.image_data.url
+
+        return HttpResponse(json.dumps({'result': 'success', 'url': url}))
+    except MultiValueDictKeyError as e:
+        return HttpResponse(json.dumps({'result': 'missing arguments', 'long_error': e.message}))
+    except (User.DoesNotExist, GameRound.DoesNotExist, UploadedImage.DoesNotExist) as e:
+        return HttpResponse(json.dumps({'result': 'unknown user', 'add_info': e.message}))
 
 def get_distance(lat1, lon1, lat2, lon2):
     # use +/- to indicate north/south and east/west
