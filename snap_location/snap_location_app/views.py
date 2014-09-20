@@ -118,23 +118,23 @@ def guess_location(request):
     try:
         unique_name = request.GET['unique_name']
         sender_name = request.GET['friend_name']
-        location_data = request.GET['location_data']
+        guess_lat = float(request.GET['guess_lat'])
+        guess_lon = float(request.GET['guess_lon'])
 
         user = User.objects.get(unique_name=unique_name.lower())
         sender = User.objects.get(unique_name=sender_name.lower())
         game_round = GameRound.objects.filter(sender=sender.id, recipient=user.id).order_by('datetime')[:1].get()
-        image = UploadedImage.objects.get(id=image_data)
+        image = UploadedImage.objects.get(id=game_round.image_data)
         image_lat = game_round.gps_latitude
         image_lon = game_round.gps_longitude
-        guess_lat = location_data[0]
-        guess_lon = location_data[1]
         distance = get_distance(image_lat, image_lon, guess_lat, guess_lon)
 
-        game_round.delete()
-        image.reference_count -= 1
-        image.save()
-        if image.reference_count == 0:
-            image.delete()
+        # Commented for testing purposes
+        # game_round.delete()
+        # image.reference_count -= 1
+        # image.save()
+        # if image.reference_count == 0:
+            # image.delete()
 
         score = float(10000)/distance if distance!=0 else 1000
         return HttpResponse(json.dumps({'result': 'success', 'score': score}))
