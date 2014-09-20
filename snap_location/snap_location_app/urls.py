@@ -7,4 +7,5 @@ urlpatterns = patterns('',
     url(r'^add_user/', views.add_user),
     url(r'^add_relationship/', views.add_relationship),
     url(r'^friends/', views.show_friends),
+    url(r'^guess_location/', views.guess_location),
 )

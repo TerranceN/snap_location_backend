@@ -9,6 +9,10 @@ class User(models.Model):
         if not self.pk:
             self.unique_name_display = self.unique_name
             self.unique_name = self.unique_name.lower()
+
+        
+        self.unique_name_display = self.unique_name
+        self.unique_name = self.unique_name.lower()
         super(User, self).save(*args, **kwargs)
 
 class Relationship(models.Model):
