@@ -74,12 +74,14 @@ def push_image_location(request):
         return HttpResponse(json.dumps({'result': 'missing arguments', 'long_error': e.message}))
 
     try:
+        print unique_name
         user = User.objects.get(unique_name=unique_name.lower())
     except User.DoesNotExist as e:
         return HttpResponse(json.dumps({'result': 'unknown user', 'add_info': e.message}))
 
     try:
-        recipients = map(lambda x: User.obects.get(unique_name=x.lower()), recipients_names)
+        print recipients_names
+        recipients = map(lambda x: User.objects.get(unique_name=x.lower()), recipients_names)
     except User.DoesNotExist as e:
         return HttpResponse(json.dumps({'result': 'unknown user', 'add_info': e.message}))
 
@@ -94,6 +96,7 @@ def push_image_location(request):
         GameRound.objects.create(
                 sender=user.id,
                 recipient=recipient.id,
+                image_data=uploaded_image.id,
                 datetime=datetime.now(),
                 gps_latitude=latitude,
                 gps_longitude=longitude
@@ -120,8 +123,11 @@ def make_user(request):
 def get_gamedata(request):
     game_rounds = map(lambda x: {
         'sender': User.objects.get(id=x.sender).unique_name_display,
-        'receiver': User.objects.get(id=x.receiver).unique_name_display,
-        'image': str(x.image_data)
+        'recipient': User.objects.get(id=x.recipient).unique_name_display,
+        'image': str(x.image_data),
+        'latitude': str(x.gps_latitude),
+        'longitude': str(x.gps_longitude),
+        'datetime': str(x.datetime)
         },
             GameRound.objects.all())
     return HttpResponse(json.dumps({'result': 'success', 'game_rounds': game_rounds}))
