@@ -152,8 +152,8 @@ def guess_location(request):
         if len(game_rounds) > 1:
             next_round = game_rounds[1]
             image = UploadedImage.objects.get(id=next_round.image_data)
-            # url = image.image_data.url
-            # d['next_url'] = url
+            url = image.image_data.url
+            d['next_url'] = url
         return HttpResponse(json.dumps(d))
     except MultiValueDictKeyError as e:
         return HttpResponse(json.dumps({'result': 'missing arguments', 'long_error': e.message}))
