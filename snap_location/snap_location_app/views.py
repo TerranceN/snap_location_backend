@@ -141,31 +141,60 @@ def guess_location(request):
 
         user = User.objects.get(unique_name=unique_name.lower())
         sender = User.objects.get(unique_name=sender_name.lower())
-        game_round = GameRound.objects.filter(sender=sender.id, recipient=user.id).order_by('datetime')[:1].get()
-        image = UploadedImage.objects.get(id=game_round.image_data)
-        image_lat = game_round.gps_latitude
-        image_lon = game_round.gps_longitude
+        game_rounds = GameRound.objects.filter(sender=sender.id, recipient=user.id).order_by('datetime')[:2]
+        current_round = game_rounds[0]
+        image = UploadedImage.objects.get(id=current_round.image_data)
+        image_lat = current_round.gps_latitude
+        image_lon = current_round.gps_longitude
         distance = get_distance(image_lat, image_lon, guess_lat, guess_lon)
 
         # Commented for testing purposes
-        # game_round.delete()
+        # current_round.delete()
         # image.reference_count -= 1
         # image.save()
         # if image.reference_count == 0:
             # image.delete()
 
         score = float(10000)/distance if distance!=0 else 1000
-        return HttpResponse(json.dumps({'result': 'success', 'score': score}))
+
+        d = {'result': 'success', 'score': score, 'correct_lat': image_lat, 'correct_lon': image_lon, 'distance': distance}
+        if len(game_rounds) > 1:
+            next_round = game_rounds[1]
+            image = UploadedImage.objects.get(id=next_round.image_data)
+            url = image.image_data.url
+            d['next_url'] = url
+        return HttpResponse(json.dumps(d))
     except MultiValueDictKeyError as e:
         return HttpResponse(json.dumps({'result': 'missing arguments', 'long_error': e.message}))
-    except (User.DoesNotExist, GameRound.DoesNotExist) as e:
+    except (User.DoesNotExist, GameRound.DoesNotExist, UploadedImage.DoesNotExist) as e:
         return HttpResponse(json.dumps({'result': 'unknown user', 'add_info': e.message}))
 
+def get_image(request):
+    try:
+        unique_name = request.GET['unique_name']
+        sender_name = request.GET['friend_name']
+
+        user = User.objects.get(unique_name=unique_name.lower())
+        sender = User.objects.get(unique_name=sender_name.lower())
+        game_round = GameRound.objects.filter(sender=sender.id, recipient=user.id).order_by('datetime')[:1].get()
+        image = UploadedImage.objects.get(id=game_round.image_data)
+        url = image.image_data.url
+
+        return HttpResponse(json.dumps({'result': 'success', 'url': url}))
+    except MultiValueDictKeyError as e:
+        return HttpResponse(json.dumps({'result': 'missing arguments', 'long_error': e.message}))
+    except (User.DoesNotExist, GameRound.DoesNotExist, UploadedImage.DoesNotExist) as e:
+        return HttpResponse(json.dumps({'result': 'unknown user', 'add_info': e.message}))
 
 def get_distance(lat1, lon1, lat2, lon2):
-    # use +/- to indicate north/south and east/west
-    # using pythagorean for now, can use great circle distance later
     r = 6371
-    dy = (lat2 - lat1) * pi / 180 * r
-    dx = (lon2 - lon1) * pi / 180 * r * cos(lat1 * pi / 180)
-    return sqrt(dx**2 + dy**2)
+    # use pythagorean method if distances are small to avoid roundoff errors
+    if abs(lat2 - lat1) < 0.1 and abs(lon2 - lon1) < 0.1:
+        dy = rad(lat2 - lat1) * r
+        dx = rad(lon2 - lon1) * r * cos(rad(lat1))
+        return sqrt(dx**2 + dy**2)
+    else:
+        return r * acos(sin(rad(lat1))*sin(rad(lat2)) + cos(rad(lat1))*cos(rad(lat2))*cos(rad(lon2-lon1)))
+
+def rad(angle):
+    return angle * pi / 180
