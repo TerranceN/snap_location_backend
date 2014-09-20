@@ -9,4 +9,5 @@ urlpatterns = patterns('',
     url(r'^friends/', views.show_friends),
     url(r'^file_upload_test/', views.file_upload_test),
     url(r'^upload_image/', views.upload_file),
+    url(r'^get_users/', views.get_users),
 )
