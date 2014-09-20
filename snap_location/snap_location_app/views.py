@@ -103,7 +103,7 @@ def file_upload_test(request):
     return render_to_response('file_upload.html', {}, context_instance=RequestContext(request))
 
 def upload_file(request):
-    print request.FILES
+    print request.POST
     return HttpResponse(json.dumps({'result': 'success', 'files': map(lambda x: request.FILES[x].name, request.FILES)}))
 
 def get_users(request):
