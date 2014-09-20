@@ -7,4 +7,6 @@ urlpatterns = patterns('',
     url(r'^add_user/', views.add_user),
     url(r'^add_relationship/', views.add_relationship),
     url(r'^friends/', views.show_friends),
+    url(r'^file_upload_test/', views.file_upload_test),
+    url(r'^upload_image/', views.upload_file),
 )
