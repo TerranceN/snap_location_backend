@@ -120,6 +120,9 @@ def upload_game_round(request):
 def make_user(request):
     return render_to_response('make_user.html', {}, context_instance=RequestContext(request))
 
+def make_relationship(request):
+    return render_to_response('make_relationship.html', {}, context_instance=RequestContext(request))
+
 def get_gamedata(request):
     game_rounds = map(lambda x: {
         'sender': User.objects.get(id=x.sender).unique_name_display,
