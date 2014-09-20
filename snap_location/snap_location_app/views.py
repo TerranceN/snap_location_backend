@@ -16,8 +16,8 @@ def test(request):
 
 def add_user(request):
     try:
-        display_name = request.GET['display_name']
-        unique_name = request.GET['unique_name']
+        display_name = request.POST['display_name']
+        unique_name = request.POST['unique_name']
         User.objects.create(display_name=display_name, unique_name=unique_name)
         return HttpResponse(json.dumps({'result': 'success'}))
     except MultiValueDictKeyError as e:
@@ -27,8 +27,8 @@ def add_user(request):
 
 def add_relationship(request):
     try:
-        first_user_name = request.GET['first_user']
-        second_user_name = request.GET['second_user']
+        first_user_name = request.POST['first_user']
+        second_user_name = request.POST['second_user']
         first_user = User.objects.get(unique_name=first_user_name.lower())
         second_user = User.objects.get(unique_name=second_user_name.lower())
         min_id = min(first_user.id, second_user.id)
@@ -45,7 +45,7 @@ def add_relationship(request):
 
 def show_friends(request):
     try:
-        unique_name = request.GET['unique_name']
+        unique_name = request.POST['unique_name']
         user = User.objects.get(unique_name=unique_name.lower())
         relationships = Relationship.objects.filter(Q(first_user=user.id) | Q(second_user=user.id))
         def get_relation_data(relation):
@@ -103,12 +103,20 @@ def file_upload_test(request):
     return render_to_response('file_upload.html', {}, context_instance=RequestContext(request))
 
 def upload_file(request):
-    print "POST:"
-    print request.POST
-    print "FILES:"
-    print request.FILES
     return HttpResponse(json.dumps({'result': 'success', 'files': map(lambda x: request.FILES[x].name, request.FILES)}))
 
 def get_users(request):
-    user_data = map(lambda x: {'display_name': x.unique_name_display}, User.objects.all())
+    user_data = map(lambda x: {'unique_name': x.unique_name_display}, User.objects.all())
     return HttpResponse(json.dumps({'result': 'success', 'users': user_data}))
+
+def upload_game_round(request):
+    return render_to_response('upload_game_round.html', {}, context_instance=RequestContext(request))
+
+def get_gamedata(request):
+    game_rounds = map(lambda x: {
+        'sender': User.objects.get(id=x.sender).unique_name_display,
+        'receiver': User.objects.get(id=x.receiver).unique_name_display,
+        'image': str(x.image_data)
+        },
+            GameRound.objects.all())
+    return HttpResponse(json.dumps({'result': 'success', 'game_rounds': game_rounds}))

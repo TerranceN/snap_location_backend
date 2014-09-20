@@ -10,4 +10,7 @@ urlpatterns = patterns('',
     url(r'^file_upload_test/', views.file_upload_test),
     url(r'^upload_image/', views.upload_file),
     url(r'^get_users/', views.get_users),
+    url(r'^get_gamedata/', views.get_gamedata),
+    url(r'^push_image_location/', views.push_image_location),
+    url(r'^upload_game_round/', views.upload_game_round),
 )
