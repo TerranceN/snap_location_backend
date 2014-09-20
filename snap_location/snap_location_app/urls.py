@@ -14,4 +14,5 @@ urlpatterns = patterns('',
     url(r'^push_image_location/', views.push_image_location),
     url(r'^upload_game_round/', views.upload_game_round),
     url(r'^guess_location/', views.guess_location),
+    url(r'^make_user/', views.make_user),
 )
