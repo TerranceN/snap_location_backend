@@ -18,3 +18,15 @@ class Relationship(models.Model):
 
     class Meta:
         unique_together = ('first_user', 'second_user')
+
+class GameRound(models.Model):
+    sender = models.IntegerField()
+    recipient = models.IntegerField()
+    datetime = models.DateTimeField(db_index=True)
+    image_data = models.IntegerField()
+    gps_latitude = models.FloatField()
+    gps_longitude = models.FloatField()
+
+class UploadedImage(models.Model):
+    reference_count = models.IntegerField()
+    image_data = models.ImageField()
