@@ -1,6 +1,8 @@
 import json
 
+from django.shortcuts import render_to_response
 from django.http import HttpResponse
+from django.template import RequestContext
 from django.utils.datastructures import MultiValueDictKeyError
 from django.db import IntegrityError
 from django.db.models import Q
@@ -56,3 +58,10 @@ def show_friends(request):
         return HttpResponse(json.dumps({'result': 'missing arguments', 'long_error': e.message}))
     except User.DoesNotExist as e:
         return HttpResponse(json.dumps({'result': 'unknown user', 'add_info': e.message}))
+
+def file_upload_test(request):
+    return render_to_response('file_upload.html', {}, context_instance=RequestContext(request))
+
+def upload_file(request):
+    print request.FILES
+    return HttpResponse(json.dumps({'result': 'success'}))
