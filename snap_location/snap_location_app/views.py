@@ -228,7 +228,7 @@ def guess_location(request):
             d['next_url'] = url
         return HttpResponse(json.dumps(d))
     except MultiValueDictKeyError as e:
-        return HttpResponse(json.dumps({'result': 'missing arguments', 'long_error': e.message}))
+        return HttpResponse(json.dumps({'result': 'missing arguments', 'long_error': e.message, 'request': request}))
     except (User.DoesNotExist, GameRound.DoesNotExist, UploadedImage.DoesNotExist) as e:
         return HttpResponse(json.dumps({'result': 'unknown user', 'add_info': e.message}))
 
