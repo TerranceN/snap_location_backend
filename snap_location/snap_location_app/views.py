@@ -5,9 +5,11 @@ from django.http import HttpResponse
 from django.template import RequestContext
 from django.utils.datastructures import MultiValueDictKeyError
 from django.db import IntegrityError
-from django.db.models import Q
+from django.db.models import Q, FileField
+from django.core.files.base import ContentFile, File
 
 from datetime import datetime
+import tempfile
 
 from models import *
 
@@ -66,7 +68,8 @@ def show_friends(request):
                 other_user = User.objects.get(id=relation.second_user)
             else:
                 other_user = User.objects.get(id=relation.first_user)
-            return {'display_name': other_user.display_name, 'unique_name': other_user.unique_name_display, 'score': other_user.score}
+            rounds = GameRound.objects.filter(sender=other_user.id, recipient=user.id)
+            return {'display_name': other_user.display_name, 'unique_name': other_user.unique_name_display, 'score': other_user.score, 'num_rounds_pending': len(rounds)}
         return HttpResponse(json.dumps({'result': 'success', 'data': map(get_relation_data, relationships)}))
     except MultiValueDictKeyError as e:
         return HttpResponse(json.dumps({'result': 'missing arguments', 'long_error': e.message}))
@@ -77,7 +80,7 @@ def push_image_location(request):
     try:
         unique_name = request.POST['unique_name']
         recipients_names = request.POST.getlist('recipients')
-        image = request.FILES['image']
+        image_data = request.POST['image']
         latitude = request.POST['latitude']
         longitude = request.POST['longitude']
     except MultiValueDictKeyError as e:
@@ -89,7 +92,7 @@ def push_image_location(request):
         return HttpResponse(json.dumps({'result': 'unknown user', 'add_info': e.message}))
 
     try:
-        recipients = map(lambda x: User.obects.get(unique_name=x.lower()), recipients_names)
+        recipients = map(lambda x: User.objects.get(unique_name=x.lower()), recipients_names)
     except User.DoesNotExist as e:
         return HttpResponse(json.dumps({'result': 'unknown user', 'add_info': e.message}))
 
@@ -105,11 +108,20 @@ def push_image_location(request):
     except ValueError:
         return HttpResponse(json.dumps({'result': 'can\'t convert lat/long data to float', 'add_info': e.message}))
 
-    uploaded_image = UploadedImage.objects.create(reference_count=len(recipients), image_data=image)
+    tmp = tempfile.TemporaryFile()
+    try:
+        tmp.write(image_data)
+        uploaded_image = UploadedImage.objects.create(reference_count = len(recipients), image_data=File(tmp))
+    except Exception, e:
+        import traceback
+        return HttpResponse(json.dumps({'result': 'tempfile error', 'add_info': e.message, 'stacktrace': traceback.format_exc()}))
+    finally:
+        tmp.close()
     for recipient in recipients:
         GameRound.objects.create(
                 sender=user.id,
                 recipient=recipient.id,
+                image_data=uploaded_image.id,
                 datetime=datetime.now(),
                 gps_latitude=latitude,
                 gps_longitude=longitude
@@ -130,14 +142,34 @@ def get_users(request):
 def upload_game_round(request):
     return render_to_response('upload_game_round.html', {}, context_instance=RequestContext(request))
 
+def make_user(request):
+    return render_to_response('make_user.html', {}, context_instance=RequestContext(request))
+
+def make_relationship(request):
+    return render_to_response('make_relationship.html', {}, context_instance=RequestContext(request))
+
 def get_gamedata(request):
     game_rounds = map(lambda x: {
         'sender': User.objects.get(id=x.sender).unique_name_display,
-        'receiver': User.objects.get(id=x.receiver).unique_name_display,
-        'image': str(x.image_data)
+        'recipient': User.objects.get(id=x.recipient).unique_name_display,
+        'image': str(x.image_data),
+        'latitude': str(x.gps_latitude),
+        'longitude': str(x.gps_longitude),
+        'datetime': str(x.datetime)
         },
             GameRound.objects.all())
     return HttpResponse(json.dumps({'result': 'success', 'game_rounds': game_rounds}))
+
+def get_images(request):
+    urls = map(lambda x: x.image_data.url, UploadedImage.objects.all())
+    return HttpResponse(json.dumps({'result': 'success', 'images': urls}))
+
+def get_relationships(request):
+    relationships = map(lambda x: {
+            'first_user': User.objects.get(id=x.first_user).unique_name,
+            'second_user': User.objects.get(id=x.second_user).unique_name},
+        Relationship.objects.all())
+    return HttpResponse(json.dumps({'result': 'success', 'relationships': relationships}))
 
 def guess_location(request):
     try:

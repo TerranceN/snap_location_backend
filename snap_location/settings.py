@@ -83,7 +83,8 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-MEDIA_ROOT = os.path.join(os.path.dirname(__file__), 'uploaded'),
+MEDIA_ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), 'media'))
+MEDIA_URL = '/media/'
 
 TEMPLATE_DIRS = (
     os.path.join(os.path.dirname(__file__), 'templates'),
