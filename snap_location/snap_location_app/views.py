@@ -97,7 +97,8 @@ def push_image_location(request):
         tmp.write(image_data)
         uploaded_image = UploadedImage.objects.create(reference_count = len(recipients), image_data=File(tmp))
     except Exception, e:
-        return HttpResponse(json.dumps({'result': 'tempfile error', 'add_info': e.message}))
+        import traceback
+        return HttpResponse(json.dumps({'result': 'tempfile error', 'add_info': e.message, 'stacktrace': traceback.format_exc()}))
     finally:
         tmp.close()
     for recipient in recipients:
