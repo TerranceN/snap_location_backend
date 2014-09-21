@@ -22,7 +22,7 @@ def get_profile(request):
     try:
         unique_name = request.POST['unique_name']
         user = User.objects.get(unique_name=unique_name.lower())
-        return HttpResponse(json.dumps({'result': 'success', 'display_name': display_name, 'unique_name_display': unique_name_display, 'score': score, 'images_sent': images_sent, 'images_received': images_received}))
+        return HttpResponse(json.dumps({'result': 'success', 'display_name': user.display_name, 'unique_name_display': user.unique_name_display, 'score': user.score, 'images_sent': user.images_sent, 'images_received': user.images_received}))
     except MultiValueDictKeyError as e:
         return HttpResponse(json.dumps({'result': 'missing arguments', 'long_error': e.message}))
     except User.DoesNotExist as e:
