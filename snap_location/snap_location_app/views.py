@@ -187,12 +187,11 @@ def guess_location(request):
         image_lon = current_round.gps_longitude
         distance = get_distance(image_lat, image_lon, guess_lat, guess_lon)
 
-        # Commented for testing purposes
-        # current_round.delete()
-        # image.reference_count -= 1
-        # image.save()
-        # if image.reference_count == 0:
-            # image.delete()
+        current_round.delete()
+        image.reference_count -= 1
+        image.save()
+        if image.reference_count == 0:
+            image.delete()
 
         sender.score += 5
         sender.save()
