@@ -234,8 +234,8 @@ def guess_location(request):
 
 def get_image(request):
     try:
-        unique_name = request.GET['unique_name']
-        sender_name = request.GET['friend_name']
+        unique_name = request.POST['unique_name']
+        sender_name = request.POST['friend_name']
 
         user = User.objects.get(unique_name=unique_name.lower())
         sender = User.objects.get(unique_name=sender_name.lower())
