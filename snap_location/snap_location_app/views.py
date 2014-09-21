@@ -136,7 +136,7 @@ def upload_file(request):
     return HttpResponse(json.dumps({'result': 'success', 'files': map(lambda x: request.FILES[x].name, request.FILES)}))
 
 def get_users(request):
-    user_data = map(lambda x: {'unique_name': x.unique_name_display}, User.objects.all())
+    user_data = map(lambda x: {'unique_name': x.unique_name_display}, list(User.objects.all()))
     return HttpResponse(json.dumps({'result': 'success', 'users': user_data}))
 
 def upload_game_round(request):
@@ -157,18 +157,18 @@ def get_gamedata(request):
         'longitude': str(x.gps_longitude),
         'datetime': str(x.datetime)
         },
-            GameRound.objects.all())
+            list(GameRound.objects.all()))
     return HttpResponse(json.dumps({'result': 'success', 'game_rounds': game_rounds}))
 
 def get_images(request):
-    urls = map(lambda x: x.image_data.url, UploadedImage.objects.all())
+    urls = map(lambda x: x.image_data.url, list(UploadedImage.objects.all()))
     return HttpResponse(json.dumps({'result': 'success', 'images': urls}))
 
 def get_relationships(request):
     relationships = map(lambda x: {
             'first_user': User.objects.get(id=x.first_user).unique_name,
             'second_user': User.objects.get(id=x.second_user).unique_name},
-        Relationship.objects.all())
+        list(Relationship.objects.all()))
     return HttpResponse(json.dumps({'result': 'success', 'relationships': relationships}))
 
 def guess_location(request):
