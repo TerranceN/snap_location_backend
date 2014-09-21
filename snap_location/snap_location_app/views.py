@@ -175,8 +175,8 @@ def guess_location(request):
     try:
         unique_name = request.POST['unique_name']
         sender_name = request.POST['friend_name']
-        guess_lat = 45.
-        guess_lon = 45.
+        guess_lat = float(request.POST['guess_lat'])
+        guess_lon = float(request.POST['guess_lon'])
 
         user = User.objects.select_for_update().get(unique_name=unique_name.lower())
         sender = User.objects.select_for_update().get(unique_name=sender_name.lower())
