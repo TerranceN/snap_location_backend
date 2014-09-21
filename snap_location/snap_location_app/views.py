@@ -5,9 +5,11 @@ from django.http import HttpResponse
 from django.template import RequestContext
 from django.utils.datastructures import MultiValueDictKeyError
 from django.db import IntegrityError
-from django.db.models import Q
+from django.db.models import Q, FileField
+from django.core.files.base import ContentFile, File
 
 from datetime import datetime
+import tempfile
 
 from models import *
 
@@ -67,20 +69,18 @@ def push_image_location(request):
     try:
         unique_name = request.POST['unique_name']
         recipients_names = request.POST.getlist('recipients')
-        image = request.FILES['image']
+        image_data = request.POST['image']
         latitude = request.POST['latitude']
         longitude = request.POST['longitude']
     except MultiValueDictKeyError as e:
         return HttpResponse(json.dumps({'result': 'missing arguments', 'long_error': e.message}))
 
     try:
-        print unique_name
         user = User.objects.get(unique_name=unique_name.lower())
     except User.DoesNotExist as e:
         return HttpResponse(json.dumps({'result': 'unknown user', 'add_info': e.message}))
 
     try:
-        print recipients_names
         recipients = map(lambda x: User.objects.get(unique_name=x.lower()), recipients_names)
     except User.DoesNotExist as e:
         return HttpResponse(json.dumps({'result': 'unknown user', 'add_info': e.message}))
@@ -91,7 +91,14 @@ def push_image_location(request):
     except ValueError:
         return HttpResponse(json.dumps({'result': 'can\'t convert lat/long data to float', 'add_info': e.message}))
 
-    uploaded_image = UploadedImage.objects.create(reference_count=len(recipients), image_data=image)
+    tmp = tempfile.TemporaryFile()
+    try:
+        tmp.write(image_data)
+        uploaded_image = UploadedImage.objects.create(reference_count = len(recipients), image_data=File(tmp))
+    except Exception, e:
+        return HttpResponse(json.dumps({'result': 'tempfile error', 'add_info': e.message}))
+    finally:
+        tmp.close()
     for recipient in recipients:
         GameRound.objects.create(
                 sender=user.id,
@@ -134,6 +141,11 @@ def get_gamedata(request):
         },
             GameRound.objects.all())
     return HttpResponse(json.dumps({'result': 'success', 'game_rounds': game_rounds}))
+
+def get_images(request):
+    print len(UploadedImage.objects.all())
+    urls = map(lambda x: x.image_data.url, UploadedImage.objects.all())
+    return HttpResponse(json.dumps({'result': 'success', 'images': urls}))
 
 def guess_location(request):
     try:

@@ -29,4 +29,4 @@ class GameRound(models.Model):
 
 class UploadedImage(models.Model):
     reference_count = models.IntegerField()
-    image_data = models.ImageField()
+    image_data = models.FileField()
