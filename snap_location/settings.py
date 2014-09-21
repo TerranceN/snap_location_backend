@@ -86,6 +86,10 @@ STATIC_URL = '/static/'
 MEDIA_ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), 'media'))
 MEDIA_URL = '/media/'
 
+ALLOWED_HOSTS = [
+    'test.tniechciol.ca',  # Allow domain and subdomains
+]
+
 TEMPLATE_DIRS = (
     os.path.join(os.path.dirname(__file__), 'templates'),
 )
