@@ -58,7 +58,8 @@ def show_friends(request):
                 other_user = User.objects.get(id=relation.second_user)
             else:
                 other_user = User.objects.get(id=relation.first_user)
-            return {'display_name': other_user.display_name, 'unique_name': other_user.unique_name_display}
+            rounds = GameRound.objects.filter(sender=other_user.id, recipient=user.id)
+            return {'display_name': other_user.display_name, 'unique_name': other_user.unique_name_display, 'num_rounds_pending': len(rounds)}
         return HttpResponse(json.dumps({'result': 'success', 'data': map(get_relation_data, relationships)}))
     except MultiValueDictKeyError as e:
         return HttpResponse(json.dumps({'result': 'missing arguments', 'long_error': e.message}))
