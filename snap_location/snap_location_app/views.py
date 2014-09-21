@@ -175,8 +175,8 @@ def guess_location(request):
     try:
         unique_name = request.POST['unique_name']
         sender_name = request.POST['friend_name']
-        guess_lat = float(request.POST['guess_lat'])
-        guess_lon = float(request.POST['guess_lon'])
+        guess_lat = 45.
+        guess_lon = 45.
 
         user = User.objects.select_for_update().get(unique_name=unique_name.lower())
         sender = User.objects.select_for_update().get(unique_name=sender_name.lower())
@@ -227,8 +227,8 @@ def guess_location(request):
             url = image.image_data.url
             d['next_url'] = url
         return HttpResponse(json.dumps(d))
-    # except MultiValueDictKeyError as e:
-    #     return HttpResponse(json.dumps({'result': 'missing arguments', 'long_error': e.message}))
+    except MultiValueDictKeyError as e:
+        return HttpResponse(json.dumps({'result': 'missing arguments', 'long_error': e.message}))
     except (User.DoesNotExist, GameRound.DoesNotExist, UploadedImage.DoesNotExist) as e:
         return HttpResponse(json.dumps({'result': 'unknown user', 'add_info': e.message}))
 
