@@ -4,6 +4,9 @@ class User(models.Model):
     display_name = models.CharField(max_length=20)
     unique_name_display = models.CharField(max_length=10)
     unique_name = models.CharField(max_length=10, unique=True)
+    score = models.IntegerField(default=0)
+    images_sent = models.IntegerField(default=0)
+    images_received = models.IntegerField(default=0)
 
     def save(self, *args, **kwargs):
         if not self.pk:

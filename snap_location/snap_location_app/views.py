@@ -16,6 +16,16 @@ from math import *
 def test(request):
     return HttpResponse(json.dumps({'you-lost': 'the-game'}))
 
+def get_profile(request):
+    try:
+        unique_name = request.POST['unique_name']
+        user = User.objects.get(unique_name=unique_name.lower())
+        return HttpResponse(json.dumps({'result': 'success', 'display_name': display_name, 'unique_name_display': unique_name_display, 'score': score, 'images_sent': images_sent, 'images_received': images_received}))
+    except MultiValueDictKeyError as e:
+        return HttpResponse(json.dumps({'result': 'missing arguments', 'long_error': e.message}))
+    except User.DoesNotExist as e:
+        return HttpResponse(json.dumps({'result': 'unknown user', 'add_info': e.message}))
+
 def add_user(request):
     try:
         display_name = request.POST['display_name']
@@ -56,7 +66,7 @@ def show_friends(request):
                 other_user = User.objects.get(id=relation.second_user)
             else:
                 other_user = User.objects.get(id=relation.first_user)
-            return {'display_name': other_user.display_name, 'unique_name': other_user.unique_name_display}
+            return {'display_name': other_user.display_name, 'unique_name': other_user.unique_name_display, 'score': other_user.score}
         return HttpResponse(json.dumps({'result': 'success', 'data': map(get_relation_data, relationships)}))
     except MultiValueDictKeyError as e:
         return HttpResponse(json.dumps({'result': 'missing arguments', 'long_error': e.message}))
@@ -74,7 +84,7 @@ def push_image_location(request):
         return HttpResponse(json.dumps({'result': 'missing arguments', 'long_error': e.message}))
 
     try:
-        user = User.objects.get(unique_name=unique_name.lower())
+        user = User.objects.select_for_update().get(unique_name=unique_name.lower())
     except User.DoesNotExist as e:
         return HttpResponse(json.dumps({'result': 'unknown user', 'add_info': e.message}))
 
@@ -82,6 +92,12 @@ def push_image_location(request):
         recipients = map(lambda x: User.obects.get(unique_name=x.lower()), recipients_names)
     except User.DoesNotExist as e:
         return HttpResponse(json.dumps({'result': 'unknown user', 'add_info': e.message}))
+
+    sent = 0
+    for i in range(len(recipients)):
+        sent += 1.0/(i+1)
+    user.images_sent += int(round(sent))
+    user.save()
 
     try:
         latitude = float(latitude)
@@ -130,11 +146,11 @@ def guess_location(request):
         guess_lat = float(request.GET['guess_lat'])
         guess_lon = float(request.GET['guess_lon'])
 
-        user = User.objects.get(unique_name=unique_name.lower())
-        sender = User.objects.get(unique_name=sender_name.lower())
+        user = User.objects.select_for_update().get(unique_name=unique_name.lower())
+        sender = User.objects.select_for_update().get(unique_name=sender_name.lower())
         game_rounds = GameRound.objects.filter(sender=sender.id, recipient=user.id).order_by('datetime')[:2]
         current_round = game_rounds[0]
-        image = UploadedImage.objects.get(id=current_round.image_data)
+        image = UploadedImage.objects.select_for_update().get(id=current_round.image_data)
         image_lat = current_round.gps_latitude
         image_lon = current_round.gps_longitude
         distance = get_distance(image_lat, image_lon, guess_lat, guess_lon)
@@ -146,7 +162,31 @@ def guess_location(request):
         # if image.reference_count == 0:
             # image.delete()
 
-        score = float(10000)/distance if distance!=0 else 1000
+        sender.score += 5
+        sender.save()
+
+        user.images_received += 1
+        ratio = float(user.images_sent)/user.images_received
+        if ratio < 0.4:
+            ratio = 0.4
+        elif ratio > 2.5:
+            ratio = 2.5
+
+        if distance < 0.05:
+            score = 15
+        elif distance < 0.1:
+            score = 10
+        elif distance < 0.3:
+            score = 7
+        elif distance < 0.5:
+            score = 5
+        elif distance < 1:
+            score = 3
+        else:
+            score = 2
+        score = int(round(ratio*score))
+        user.score += score
+        user.save()
 
         d = {'result': 'success', 'score': score, 'correct_lat': image_lat, 'correct_lon': image_lon, 'distance': distance}
         if len(game_rounds) > 1:
