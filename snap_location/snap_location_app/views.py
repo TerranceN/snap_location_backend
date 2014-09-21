@@ -143,9 +143,15 @@ def get_gamedata(request):
     return HttpResponse(json.dumps({'result': 'success', 'game_rounds': game_rounds}))
 
 def get_images(request):
-    print len(UploadedImage.objects.all())
     urls = map(lambda x: x.image_data.url, UploadedImage.objects.all())
     return HttpResponse(json.dumps({'result': 'success', 'images': urls}))
+
+def get_relationships(request):
+    relationships = map(lambda x: {
+            'first_user': User.objects.get(id=x.first_user).unique_name,
+            'second_user': User.objects.get(id=x.second_user).unique_name},
+        Relationship.objects.all())
+    return HttpResponse(json.dumps({'result': 'success', 'relationships': relationships}))
 
 def guess_location(request):
     try:
